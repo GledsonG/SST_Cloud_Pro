@@ -1,4 +1,3 @@
-# SST_Cloud_Pro
 # ☁️ SST Cloud Pro – Template de Portfólio
 
 Um sistema de gestão de produção e Kanban focado em documentos de Saúde e Segurança do Trabalho (SST). 
