@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SST Cloud – Gestão de Produção</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --b0:#0B2A45;--b1:#143C64;--b2:#1A5496;--b3:#2272C3;--b6:#E8F3FC;
+  --gold:#E8960A;--gold-l:#FFF0CC;
+  --green:#1A7A4A;--green-l:#E6F7ED;
+  --red:#C0392B;--red-l:#FDECEA;
+  --yellow:#B7860B;--yellow-l:#FFF8E1;
+  --purple:#5B2D8E;--purple-l:#F0E8FB;
+  --gray:#F4F7FA;--gray2:#E2EBF3;--text:#0D1F2D;
+  --ff-head:'Barlow Condensed',sans-serif;
+  --ff-body:'Inter',sans-serif;
+}
+html,body{height:100%;margin:0;}
+body{font-family:var(--ff-body);background:var(--gray);color:var(--text);font-size:13px;overflow-y:scroll;}
+header{background:linear-gradient(135deg,var(--b0),var(--b1));padding:15px 30px;color:#fff;border-bottom:4px solid var(--gold);position:sticky;top:0;z-index:101;}
+header h1{font-family:var(--ff-head);font-size:1.8rem;letter-spacing:1px;}
+.nav-tabs{background:var(--b1);display:flex;padding:0 30px;gap:10px;flex-wrap:wrap;position:sticky;top:57px;z-index:100;}
+.tab{padding:12px 20px;color:var(--b6);font-family:var(--ff-head);font-size:1rem;text-transform:uppercase;cursor:pointer;border-bottom:3px solid transparent;}
+.tab.active{color:var(--gold);border-color:var(--gold);}
+main{padding:20px 30px;}
+#tab-kanban{overflow-x:auto;}
+.kanban-board{display:flex;gap:15px;padding-bottom:10px;}
+.kanban-col{flex:1;min-width:280px;background:#fff;border-radius:6px;box-shadow:0 2px 5px rgba(0,0,0,0.05);display:flex;flex-direction:column;max-height:calc(100vh - 180px);overflow-y:auto;}
+.kanban-cards{padding:10px;min-height:350px;display:flex;flex-direction:column;gap:10px;background:var(--gray2);flex:1;overflow-y:auto;}
+.kanban-board::-webkit-scrollbar{height:8px;}
+.kanban-board::-webkit-scrollbar-track{background:var(--gray2);}
+.kanban-board::-webkit-scrollbar-thumb{background:var(--b3);border-radius:4px;}
+.section{display:none;}
+.section.active{display:block;animation:fadeIn 0.3s;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* KANBAN */
+.kanban-col{flex:1;min-width:280px;background:#fff;border-radius:6px;box-shadow:0 2px 5px rgba(0,0,0,0.05);display:flex;flex-direction:column;}
+.kanban-header{padding:10px 12px;color:#fff;font-weight:bold;text-align:center;border-radius:6px 6px 0 0;font-size:0.9rem;text-transform:uppercase;display:flex;justify-content:center;align-items:center;gap:8px;position:relative;}
+.kanban-header.verde{background:#1A7A4A;}
+.kanban-header.amarelo{background:#B7860B;}
+.kanban-header.vermelho{background:#C0392B;}
+.col-count{background:rgba(255,255,255,0.25);color:#fff;font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:12px;min-width:24px;text-align:center;}
+.kanban-cards{padding:10px;min-height:350px;display:flex;flex-direction:column;gap:10px;background:var(--gray2);}
+
+/* CARDS */
+.k-card{background:#fff;padding:12px;border-radius:5px;border-left:4px solid var(--b3);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+.k-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.k-empresa{font-size:1rem;font-weight:700;}
+.k-empresa.comp-baixa{color:#1A7A4A;}
+.k-empresa.comp-media{color:#B7860B;}
+.k-empresa.comp-alta{color:#C0392B;}
+.doc-tag{background:var(--purple-l);color:var(--purple);font-size:0.7rem;padding:2px 6px;border-radius:4px;font-weight:bold;white-space:nowrap;}
+.k-card p{font-size:0.75rem;color:var(--b1);margin-bottom:4px;}
+
+/* Timer cronômetro */
+.k-timer{font-size:0.72rem;padding:4px 8px;border-radius:4px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;}
+.k-timer.timer-ok{background:#E6F7ED;color:#1A7A4A;}
+.k-timer.timer-warn{background:#FFF8E1;color:#B7860B;}
+.k-timer.timer-red{background:#FDECEA;color:#C0392B;}
+
+/* Info rows */
+.k-info-row{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0;}
+.k-info-chip{font-size:0.7rem;padding:2px 7px;border-radius:4px;background:var(--gray);color:#555;display:flex;align-items:center;gap:4px;}
+.k-info-chip.entrega-ok{background:#E6F7ED;color:#1A7A4A;}
+.k-info-chip.entrega-warn{background:#FFF8E1;color:#B7860B;}
+.k-info-chip.entrega-red{background:#FDECEA;color:#C0392B;}
+
+.k-card select{width:100%;padding:4px;font-size:0.75rem;margin-top:6px;border:1px solid var(--gray2);border-radius:4px;}
+.k-resp-row{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.k-resp-row label{font-size:0.72rem;color:#888;white-space:nowrap;}
+.k-resp-row select{flex:1;padding:3px;font-size:0.75rem;border:1px solid var(--gray2);border-radius:4px;}
+
+/* Ações do card */
+.k-actions{display:flex;gap:5px;margin-top:8px;align-items:center;}
+.k-btn-icon{border:none;border-radius:4px;cursor:pointer;padding:5px 8px;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:opacity .2s;}
+.k-btn-icon:hover{opacity:0.8;}
+.k-btn-del{background:#FDECEA;color:#C0392B;}
+.k-btn-arch{background:#E6F7ED;color:#1A7A4A;}
+.k-btn-obs{background:#F0E8FB;color:#5B2D8E;}
+.k-btn-obs.has-obs{background:#5B2D8E;color:#fff;}
+
+/* Modal de observação */
+.obs-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:800;justify-content:center;align-items:center;}
+.obs-modal-overlay.show{display:flex;}
+.obs-modal{background:#fff;border-radius:8px;padding:20px;width:360px;box-shadow:0 10px 30px rgba(0,0,0,0.2);}
+.obs-modal h3{color:var(--b1);margin-bottom:12px;font-size:1rem;}
+.obs-modal textarea{width:100%;height:100px;padding:8px;border:1px solid var(--gray2);border-radius:4px;font-family:inherit;font-size:0.85rem;resize:vertical;}
+.obs-modal-actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end;}
+.obs-modal-actions button{padding:7px 16px;border:none;border-radius:4px;cursor:pointer;font-weight:600;}
+.btn-cancel{background:var(--gray2);color:var(--text);}
+.btn-save-obs{background:var(--purple);color:#fff;}
+
+/* FORM */
+.form-card{background:#fff;padding:20px;border-radius:6px;box-shadow:0 2px 5px rgba(0,0,0,0.05);margin-bottom:20px;}
+.form-card h3{color:var(--b1);border-bottom:2px solid var(--gray2);padding-bottom:5px;margin-bottom:15px;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+label{font-weight:600;color:var(--b0);font-size:0.85rem;}
+input,select,textarea{padding:8px;border:1px solid #ccc;border-radius:4px;font-family:inherit;}
+input[readonly]{background:var(--gray2);cursor:not-allowed;font-weight:bold;}
+.checklist-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:0.85rem;}
+.docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+.btn{padding:10px 20px;background:var(--b3);color:#fff;border:none;border-radius:4px;font-weight:bold;cursor:pointer;margin-top:15px;text-transform:uppercase;}
+.btn:hover{background:var(--b1);}
+
+/* DASHBOARD */
+.dash-card{background:#fff;border-left:4px solid var(--gold);border-radius:6px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.08);display:flex;flex-direction:column;justify-content:center;min-height:70px;}
+.dash-card h2{color:var(--b1);font-size:1.4rem;line-height:1;margin:0 0 4px 0;font-family:var(--ff-head);}
+.dash-card p{color:#666;font-size:0.75rem;font-weight:600;text-transform:uppercase;margin:0;}
+
+/* SERVIÇOS SECUNDÁRIOS */
+.sec-filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:15px;}
+.sec-filters input{padding:7px 10px;border:1px solid var(--gray2);border-radius:4px;font-family:inherit;width:220px;}
+.sec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;padding:5px 0;}
+.sec-card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow:hidden;}
+.sec-card-header{background:var(--b1);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.sec-card-header h3{color:#fff;font-family:var(--ff-head);font-size:1.1rem;letter-spacing:.5px;}
+.sec-badge{display:flex;align-items:center;gap:8px;}
+.sec-count{background:rgba(255,255,255,0.15);color:#fff;font-size:0.8rem;font-weight:700;padding:4px 10px;border-radius:20px;}
+.sec-pct{background:var(--gold);color:#000;font-size:0.85rem;font-weight:700;padding:4px 10px;border-radius:20px;}
+.sec-pct.completo{background:#1A7A4A;color:#fff;}
+.sec-progress{height:5px;background:var(--gray2);}
+.sec-progress-bar{height:5px;background:var(--green);transition:width .4s;}
+.sec-body{padding:14px 16px;}
+.sec-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray2);}
+.sec-item:last-child{border-bottom:none;}
+.sec-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--green);}
+.sec-item-label{cursor:pointer;font-size:0.9rem;color:var(--text);flex:1;}
+.sec-item-label.done{text-decoration:line-through;color:#aaa;}
+.sec-item-resp{font-size:0.72rem;padding:2px 6px;border:1px solid var(--gray2);border-radius:4px;color:#555;cursor:pointer;}
+.sec-empty{text-align:center;padding:40px 20px;color:#aaa;font-size:0.9rem;}
+.sec-empty span{font-size:2rem;display:block;margin-bottom:8px;}
+.chip-sec{padding:6px 12px;border:2px solid var(--b3);background:#fff;color:var(--b3);border-radius:20px;cursor:pointer;font-size:0.78rem;font-weight:600;transition:all .2s;}
+.chip-sec.ativo{background:var(--b3);color:#fff;}
+.chip-outras{border-color:var(--purple);color:var(--purple);}
+.chip-outras.ativo{background:var(--purple);color:#fff;}
+
+/* RELATÓRIOS */
+.rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;margin-bottom:25px;}
+.rel-card{background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.07);padding:18px;}
+.rel-card h3{color:var(--b1);font-size:0.85rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;border-bottom:2px solid var(--gray2);padding-bottom:6px;}
+.rel-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray2);font-size:0.85rem;}
+.rel-row:last-child{border-bottom:none;}
+.rel-badge{font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:12px;}
+.rel-badge.verde{background:var(--green-l);color:var(--green);}
+.rel-badge.amarelo{background:var(--yellow-l);color:var(--yellow);}
+.rel-badge.vermelho{background:var(--red-l);color:var(--red);}
+
+/* Tabela de tempo por coluna */
+.tempo-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin-top:4px;}
+.tempo-table th{background:var(--b1);color:#fff;padding:6px 8px;text-align:left;font-weight:600;}
+.tempo-table td{padding:5px 8px;border-bottom:1px solid var(--gray2);}
+.tempo-table tr:last-child td{border-bottom:none;}
+.tempo-table tr:nth-child(even) td{background:var(--gray);}
+
+/* LOADING & TOAST */
+.loading-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(11,42,69,0.7);z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:15px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:48px;height:48px;border:5px solid #fff;border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:#fff;font-size:1rem;font-weight:600;}
+.toast{position:fixed;bottom:30px;right:30px;background:var(--green);color:#fff;padding:12px 20px;border-radius:6px;font-weight:600;font-size:0.9rem;z-index:9999;display:none;}
+.toast.error{background:var(--red);}
+.toast.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading"><div class="spinner"></div><div class="loading-text" id="loading-text">Carregando...</div></div>
+<div class="toast" id="toast"></div>
+
+<div class="obs-modal-overlay" id="obs-modal-overlay">
+  <div class="obs-modal">
+    <h3>✏️ Observação</h3>
+    <div id="obs-modal-empresa" style="font-size:0.8rem;color:#888;margin-bottom:8px;"></div>
+    <textarea id="obs-textarea" placeholder="Digite uma observação..."></textarea>
+    <div class="obs-modal-actions">
+      <button class="btn-cancel" onclick="fecharObsModal()">Cancelar</button>
+      <button class="btn-save-obs" onclick="salvarObservacao()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div id="login-screen" style="display:flex;position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0B2A45,#143C64);z-index:9999;justify-content:center;align-items:center;">
+  <div style="background:#fff;padding:40px;border-radius:10px;width:320px;box-shadow:0 10px 30px rgba(0,0,0,0.3);text-align:center;">
+    <h2 style="color:#143C64;font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;margin-bottom:6px;">SST CLOUD PRO</h2>
+    <p style="color:#888;font-size:0.85rem;margin-bottom:10px;">Gestão de Produção e Kanban</p>
+    <div style="background:var(--yellow-l);color:var(--yellow);padding:10px;border-radius:6px;font-size:0.8rem;margin-bottom:20px;text-align:left;">
+      <b>Modo de Demonstração:</b> Este é um projeto de portfólio. Você pode digitar qualquer usuário e senha para testar o sistema.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input type="text" id="login-user" placeholder="Usuário (ex: admin)" style="padding:10px;border:1px solid #E2EBF3;border-radius:4px;font-family:inherit;">
+      <input type="password" id="login-senha" placeholder="Senha (ex: admin)" style="padding:10px;border:1px solid #E2EBF3;border-radius:4px;font-family:inherit;" onkeydown="if(event.key==='Enter')fazerLogin()">
+      <button onclick="fazerLogin()" style="padding:12px;background:#2272C3;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:1rem;">ENTRAR NO SISTEMA</button>
+      <p id="login-erro" style="color:#C0392B;font-size:0.8rem;text-align:center;display:none;">Usuário ou senha incorretos</p>
+    </div>
+  </div>
+</div>
+
+<header><h1>SST CLOUD <em>PRO</em> – Gestão de Produção</h1></header>
+
+<div class="nav-tabs">
+  <div class="tab active" onclick="showTab('tab-kanban',this)">📋 Kanban de Documentos</div>
+  <div class="tab" onclick="showTab('tab-form',this)">➕ Novo Cliente / Escopo</div>
+  <div class="tab" onclick="showTab('tab-servicos-sec',this)">📦 Serviços Secundários</div>
+  <div class="tab" onclick="showTab('tab-relatorios',this)">📊 Relatórios</div>
+</div>
+
+<main>
+
+<div id="tab-kanban" class="section active">
+  <div style="margin-bottom:15px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <label>Filtrar Técnico:</label>
+    <select id="filter-resp" onchange="renderKanban()" style="width:180px;">
+      <option value="Todos">Todos da Equipe</option>
+      <option>Ana</option><option>Bruno</option><option>Carlos</option><option>Diana</option><option>Eduardo</option><option>Fernanda</option><option>Externos</option>
+    </select>
+    <label>Buscar Empresa:</label>
+    <input type="text" id="filter-empresa" placeholder="Digite o nome..." oninput="renderKanban()" style="width:200px;padding:6px;">
+    <button class="btn" style="margin-top:0;padding:8px 16px;" onclick="carregarTarefas(true)">🔄 Atualizar</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-bottom:20px;">
+    <div class="dash-card"><h2 id="dash-producao">0</h2><p>Em Produção</p></div>
+    <div class="dash-card"><h2 id="dash-concluidos">0</h2><p>Concluídos</p></div>
+    <div class="dash-card"><h2 id="dash-empresas">0</h2><p>Empresas Ativas</p></div>
+    <div class="dash-card"><h2 id="dash-documentos">0</h2><p>Documentos</p></div>
+  </div>
+  <div class="kanban-board" id="kanban-container"></div>
+</div>
+
+<div id="tab-form" class="section">
+  <div class="form-card">
+    <h3>1. Dados do Cliente</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Empresa</label><input type="text" id="f-empresa" placeholder="Nome do Cliente"></div>
+      <div class="form-group"><label>CNPJ</label><input type="text" id="f-cnpj" placeholder="00.000.000/0000-00" oninput="mascaraCNPJ(this)"></div>
+      <div class="form-group"><label>Data Liberação ERP</label><input type="date" id="f-ploomes"></div>
+      <div class="form-group"><label>Data Prevista Cliente</label><input type="date" id="f-entrega"></div>
+      <div class="form-group"><label>Equipe Responsável</label><select id="f-equipe"><option>Interna</option><option>Terceirizada</option></select></div>
+    </div>
+  </div>
+  <div class="form-card">
+    <h3>2. Dimensionamento & Escopo Técnico</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Qtd. de GHEs Estimados</label><input type="number" id="f-ghe" oninput="calcEstimativas()"></div>
+      <div class="form-group"><label>Complexidade Base</label><input type="text" id="f-complex" readonly></div>
+      <div class="form-group"><label>Tempo Previsto p/ Laudo</label><input type="text" id="f-tempo-prev" readonly></div>
+      <div class="form-group"><label>Responsável Técnico</label>
+        <select id="f-resp"><option>Ana</option><option>Bruno</option><option>Carlos</option><option>Diana</option><option>Eduardo</option><option>Fernanda</option><option>Externos</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Documentos Contratados (Principais)</label>
+        <div class="docs-grid" style="margin-top:8px;">
+          <div class="checklist-item"><input type="checkbox" class="doc-chk" value="PGR"> PGR</div>
+          <div class="checklist-item"><input type="checkbox" class="doc-chk" value="PCMSO"> PCMSO</div>
+          <div class="checklist-item"><input type="checkbox" class="doc-chk" value="LTCAT"> LTCAT</div>
+          <div class="checklist-item"><input type="checkbox" class="doc-chk" value="AEP"> AEP</div>
+          <div class="checklist-item"><input type="checkbox" class="doc-chk" value="INSALUBRIDADE"> INSALUBRIDADE</div>
+          <div class="checklist-item"><input type="checkbox" class="doc-chk" value="PERICULOSIDADE"> PERICULOSIDADE</div>
+        </div>
+      </div>
+      <div class="form-group full">
+  <label>Serviços Secundários <span style="font-weight:400;color:#888;">(opcional)</span></label>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+    <button type="button" class="chip-sec" onclick="toggleChip(this,'VARREDURA DE VAPORES ORGÂNICOS')">VARREDURA DE VAPORES ORGÂNICOS</button>
+    <button type="button" class="chip-sec" onclick="toggleChip(this,'VARREDURA DE METAIS')">VARREDURA DE METAIS</button>
+    <button type="button" class="chip-sec" onclick="toggleChip(this,'PCA')">PCA</button>
+    <button type="button" class="chip-sec" onclick="toggleChip(this,'PPR')">PPR</button>
+    <button type="button" class="chip-sec" onclick="toggleChip(this,'DOSIMETRIA DE RUÍDO')">DOSIMETRIA DE RUÍDO</button>
+    <button type="button" class="chip-sec" onclick="toggleChip(this,'VCI')">VIBRAÇÃO DE CORPO INTEIRO</button>
+    <button type="button" class="chip-sec" onclick="toggleChip(this,'VMB')">VIBRAÇÃO DE MÃOS E BRAÇOS</button>
+    <button type="button" class="chip-sec" onclick="toggleChip(this,'MAPEAMENTO PSICOSSOCIAL')">MAPEAMENTO PSICOSSOCIAL</button>
+    <button type="button" class="chip-sec chip-outras" onclick="toggleOutras()">OUTRAS</button>
+  </div>
+  <div id="outras-input" style="display:none;margin-bottom:8px;">
+    <input type="text" id="novo-servico-sec" placeholder="Digite e pressione Enter">
+  </div>
+  <div id="secundarios-container" style="margin-bottom:8px;"></div>
+</div>
+    </div>
+  </div>
+  <div class="form-card">
+    <h3>3. Vistoria (Trabalho de Campo)</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Status da Vistoria</label><select id="f-vist-status"><option>N/A</option><option>A Programar</option><option>Agendada</option><option>Concluída</option></select></div>
+      <div class="form-group"><label>Data da Vistoria</label><input type="date" id="f-vist-data"></div>
+      <div class="form-group"><label>Data Prevista de Entrega</label><input type="date" id="f-entrega-vist"></div>
+      <div class="form-group"><label>Vistoriador</label><input type="text" id="f-vistoriador" placeholder="Quem fará/fez a visita"></div>
+    </div>
+    <div style="text-align:right;"><button class="btn" onclick="salvarPlanejamento()">Gerar Tarefas no Kanban</button></div>
+  </div>
+</div>
+
+<div id="tab-servicos-sec" class="section">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+    <div>
+      <h2 style="color:var(--b1);font-family:var(--ff-head);font-size:1.4rem;">Serviços Secundários por Empresa</h2>
+      <p style="color:#888;font-size:0.8rem;margin-top:4px;">Marque os serviços conforme forem concluídos</p>
+    </div>
+    <button class="btn" style="margin-top:0;padding:8px 16px;" onclick="carregarTarefas(true)">🔄 Atualizar</button>
+  </div>
+  <div class="sec-filters">
+    <input type="text" id="sec-filter-nome" placeholder="🔍 Buscar por nome da empresa..." oninput="renderServicosSec()">
+    <input type="text" id="sec-filter-cnpj" placeholder="🔍 Buscar por CNPJ..." oninput="renderServicosSec()">
+  </div>
+  <div class="sec-grid" id="sec-grid-container"><div class="sec-empty"><span>⏳</span>Carregando...</div></div>
+</div>
+
+<div id="tab-relatorios" class="section">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <h2 style="color:var(--b1);font-family:var(--ff-head);font-size:1.4rem;">📊 Relatórios & Tempo</h2>
+    <button class="btn" style="margin-top:0;padding:8px 16px;" onclick="carregarTarefas(true)">🔄 Atualizar</button>
+  </div>
+  <div class="rel-grid" id="rel-container"><p style="color:#888;">Carregando relatórios...</p></div>
+</div>
+
+</main>
+
+<script>
+// Mock Offline System - Substitui a integração com o Google Apps Script para o Portfólio.
+const COLUNAS = ["Aguardando","Elaboração","Formatação","Revisão","Aprovação","Envio","Aguardando Cliente","Concluído"];
+const TECNICOS = ["Ana","Bruno","Carlos","Diana","Eduardo","Fernanda","Externos"];
+let servicosSecundariosTemp = [];
+let obsModalIndex = null;
+let timerInterval = null;
+let usuarioLogado = null;
+
+// Geração de dados de amostra (Mock Data) para não começar o Kanban vazio
+const hoje = Date.now();
+const diaMS = 86400000;
+let tarefas = [
+  {id: "m1", empresa: "Indústria Ômega Ltda", cnpj: "11.111.111/0001-11", doc: "PGR", status: "Elaboração", resp: "Ana", complexidade: "MÉDIA", numGHEs: 8, dataEntrega: new Date(hoje + 5*diaMS).toISOString(), dataCadastro: new Date(hoje - 3*diaMS).toISOString(), ultimoStatus: new Date(hoje - 1*diaMS).toISOString(), tipo: "PRINCIPAL"},
+  {id: "m2", empresa: "Comércio Delta SA", cnpj: "22.222.222/0001-22", doc: "LTCAT", status: "Aprovação", resp: "Bruno", complexidade: "ALTA", numGHEs: 15, dataEntrega: new Date(hoje - 2*diaMS).toISOString(), dataCadastro: new Date(hoje - 10*diaMS).toISOString(), ultimoStatus: new Date(hoje - 8*diaMS).toISOString(), tipo: "PRINCIPAL", observacao: "Cliente solicitou revisão na área de expedição."},
+  {id: "m3", empresa: "Serviços Sigma", cnpj: "33.333.333/0001-33", doc: "PCMSO", status: "Aguardando", resp: "Diana", complexidade: "BAIXA", numGHEs: 2, dataEntrega: new Date(hoje + 10*diaMS).toISOString(), dataCadastro: new Date(hoje - 1*diaMS).toISOString(), ultimoStatus: new Date(hoje - 1*diaMS).toISOString(), tipo: "PRINCIPAL"},
+  {id: "m4", empresa: "Indústria Ômega Ltda", cnpj: "11.111.111/0001-11", doc: "DOSIMETRIA DE RUÍDO", status: "Elaboração", resp: "Carlos", tipo: "SECUNDARIO", dataCadastro: new Date(hoje - 3*diaMS).toISOString(), ultimoStatus: new Date(hoje - 1*diaMS).toISOString()},
+  {id: "m5", empresa: "Construtora Zeta", cnpj: "44.444.444/0001-44", doc: "AEP", status: "Concluído", resp: "Ana", complexidade: "BAIXA", numGHEs: 4, dataEntrega: new Date(hoje + 1*diaMS).toISOString(), dataCadastro: new Date(hoje - 15*diaMS).toISOString(), ultimoStatus: new Date(hoje - 12*diaMS).toISOString(), tipo: "PRINCIPAL"}
+];
+
+// Falsa API que simula o Backend offline
+async function api(params) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const action = params.action;
+      let payload = params.data ? JSON.parse(params.data) : null;
+      
+      if (action === "login") {
+        resolve({ success: true, nome: payload.usuario || "Demonstração" });
+      } else if (action === "getAll") {
+        resolve(tarefas);
+      } else if (action === "save") {
+        payload.id = "t_" + Math.random().toString(36).substr(2, 9);
+        tarefas.push(payload);
+        resolve({ success: true });
+      } else {
+        // Ações de update/delete já são refletidas localmente no script principal
+        resolve({ success: true });
+      }
+    }, 500); // 500ms de delay falso
+  });
+}
+
+// ── UTILS ────────────────────────────────────────────────
+function showLoading(msg="Carregando..."){document.getElementById("loading-text").textContent=msg;document.getElementById("loading").classList.add("show");}
+function hideLoading(){document.getElementById("loading").classList.remove("show");}
+function showToast(msg,tipo="ok"){const t=document.getElementById("toast");t.textContent=msg;t.className="toast show"+(tipo==="error"?" error":"");setTimeout(()=>t.classList.remove("show"),3000);}
+
+function diasDesde(dataStr){
+  if(!dataStr) return 999;
+  const d=new Date(dataStr);
+  if(isNaN(d)) return 999;
+  return Math.floor((Date.now()-d.getTime())/(1000*60*60*24));
+}
+
+function segundosNaColuna(ultimoStatusStr){
+  if(!ultimoStatusStr) return null;
+  const d=new Date(ultimoStatusStr);
+  if(isNaN(d)) return null;
+  return Math.floor((Date.now()-d.getTime())/1000);
+}
+
+function formatarCronometro(secs){
+  if(secs===null||secs===undefined) return "—";
+  const s=secs%60;
+  const m=Math.floor(secs/60)%60;
+  const h=Math.floor(secs/3600)%24;
+  const d=Math.floor(secs/86400);
+  if(d>0) return `${d}d ${h.toString().padStart(2,"0")}h ${m.toString().padStart(2,"0")}m`;
+  if(h>0) return `${h.toString().padStart(2,"0")}h ${m.toString().padStart(2,"0")}m ${s.toString().padStart(2,"0")}s`;
+  if(m>0) return `${m.toString().padStart(2,"0")}m ${s.toString().padStart(2,"0")}s`;
+  return `${s}s`;
+}
+
+function getTimerClass(secs){
+  if(secs===null) return "timer-ok";
+  const dias=secs/86400;
+  if(dias<=3) return "timer-ok";
+  if(dias<=7) return "timer-warn";
+  return "timer-red";
+}
+
+function formatarTempoRel(secs){
+  if(!secs||secs<=0) return "—";
+  const d=Math.floor(secs/86400);
+  const h=Math.floor((secs%86400)/3600);
+  const m=Math.floor((secs%3600)/60);
+  if(d>0) return `${d}d ${h}h ${m}m`;
+  if(h>0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function parseDateBR(dateStr){
+  if(!dateStr) return null;
+  const s=String(dateStr).trim();
+  if(s.length===10) return new Date(s+"T12:00:00");
+  return new Date(s)
+}
+
+function mascaraCNPJ(input){
+  let v=input.value.replace(/\D/g,"").substring(0,14);
+  v=v.replace(/^(\d{2})(\d)/,"$1.$2");
+  v=v.replace(/^(\d{2})\.(\d{3})(\d)/,"$1.$2.$3");
+  v=v.replace(/\.(\d{3})(\d)/,".$1/$2");
+  v=v.replace(/(\d{4})(\d)/,"$1-$2");
+  input.value=v;
+}
+
+// ── SISTEMA DE LOGIN MOCKADO ─────────────────────────────
+async function fazerLogin(){
+  const usuario=document.getElementById("login-user").value.trim();
+  if(!usuario) {
+    document.getElementById("login-erro").style.display="block";
+    return;
+  }
+  showLoading("Autenticando...");
+  try{
+    const data=await api({action:"login",data:JSON.stringify({usuario})});
+    if(data.success){
+      usuarioLogado=data.nome;
+      document.getElementById("login-screen").style.display="none";
+      carregarTarefas();
+    }
+  }catch(e){
+    document.getElementById("login-erro").style.display="block";
+  }
+  hideLoading();
+}
+
+async function carregarTarefas(forcar=false){
+  if(!forcar && tarefas.length>0){
+    renderKanban();
+    atualizarDashboard();
+    if(document.getElementById("tab-servicos-sec").classList.contains("active")) renderServicosSec();
+    if(document.getElementById("tab-relatorios").classList.contains("active")) renderRelatorios();
+    return;
+  }
+  showLoading("Carregando tarefas...");
+  try{
+    const data=await api({action:"getAll"});
+    tarefas=Array.isArray(data)?data:[];
+    renderKanban();
+    atualizarDashboard();
+    if(document.getElementById("tab-servicos-sec").classList.contains("active")) renderServicosSec();
+    if(document.getElementById("tab-relatorios").classList.contains("active")) renderRelatorios();
+    showToast("Dados atualizados ✓");
+  }catch(e){showToast("Erro ao carregar dados","error");}
+  hideLoading();
+}
+
+// ── DASHBOARD ────────────────────────────────────────────
+function atualizarDashboard(){
+  const ativos=tarefas.filter(t=>t.ativo!=="ARQUIVADO"&&t.ativo!=="EXCLUIDO"&&t.tipo?.toUpperCase()!=="SECUNDARIO");
+  document.getElementById("dash-producao").textContent=ativos.filter(t=>t.status!=="Concluído").length;
+  document.getElementById("dash-concluidos").textContent=ativos.filter(t=>t.status==="Concluído").length;
+  document.getElementById("dash-empresas").textContent=new Set(ativos.map(t=>t.empresa)).size;
+  document.getElementById("dash-documentos").textContent=ativos.length;
+}
+
+// ── KANBAN ───────────────────────────────────────────────
+function renderKanban(){
+  if(timerInterval) clearInterval(timerInterval);
+
+  const container=document.getElementById("kanban-container");
+  container.innerHTML="";
+  const filterResp=document.getElementById("filter-resp").value;
+  const filterEmpresa=document.getElementById("filter-empresa").value.toLowerCase().trim();
+
+  const contagemCols={};
+  COLUNAS.forEach(c=>contagemCols[c]=0);
+  tarefas.forEach(t=>{
+    if(t.ativo==="ARQUIVADO"||t.ativo==="EXCLUIDO"||t.tipo?.toUpperCase()==="SECUNDARIO") return;
+    if(filterResp!=="Todos"&&t.resp!==filterResp) return;
+    if(filterEmpresa&&!String(t.empresa).toLowerCase().includes(filterEmpresa)) return;
+    const col=t.status||"Elaboração";
+    if(contagemCols[col]!==undefined) contagemCols[col]++;
+  });
+
+  COLUNAS.forEach(col=>{
+    const qtd=contagemCols[col]||0;
+    const corHeader=qtd<=5?"verde":(qtd<=10?"amarelo":"vermelho");
+    const colDiv=document.createElement("div");
+    colDiv.className="kanban-col";
+    const colId="col-"+col.replace(/\s/g,"");
+    colDiv.innerHTML=`
+      <div class="kanban-header ${corHeader}">
+        <span>${col}</span>
+        <span class="col-count">${qtd}</span>
+      </div>
+      <div class="kanban-cards" id="${colId}"></div>`;
+    container.appendChild(colDiv);
+  });
+
+  tarefas.forEach((t,index)=>{
+    if(t.ativo==="ARQUIVADO"||t.ativo==="EXCLUIDO") return;
+    if(t.tipo?.toUpperCase()==="SECUNDARIO") return;
+    if(filterResp!=="Todos"&&t.resp!==filterResp) return;
+    if(filterEmpresa&&!String(t.empresa).toLowerCase().includes(filterEmpresa)) return;
+
+    const comp=String(t.complexidade||"").toUpperCase();
+    const diasParado = segundosNaColuna(t.ultimoStatus) / 86400;
+    const corEmpresa = diasParado >= 16 ? "comp-alta" : diasParado >= 8 ? "comp-media" : "comp-baixa";
+
+    let chips="";
+
+    if(t.dataEntrega){
+      const _de=parseDateBR(t.dataEntrega);
+      const diasEntrega=Math.floor((_de-Date.now())/(1000*60*60*24));
+      const corE=diasEntrega>7?"entrega-ok":(diasEntrega>=0?"entrega-warn":"entrega-red");
+      chips+=`<span class="k-info-chip ${corE}">📅 Dt.Cliente: ${_de.toLocaleDateString("pt-BR")}</span>`;
+    }
+    
+    if(t.dataVistoria&&String(t.dataVistoria).trim()){
+      chips+=`<span class="k-info-chip">🔍 Vistoria: ${parseDateBR(t.dataVistoria).toLocaleDateString("pt-BR")}</span>`;
+    }
+    
+    if(t.numGHEs&&String(t.numGHEs).trim()){
+      const gheComp=comp==="ALTA"?"color:#C0392B":(comp==="MÉDIA"||comp==="MEDIA"?"color:#B7860B":"color:#1A7A4A");
+      chips+=`<span class="k-info-chip" style="${gheComp}">GHEs: ${t.numGHEs}</span>`;
+    }
+
+    if(comp){
+      const cStyle=comp==="ALTA"?"background:#FDECEA;color:#C0392B":(comp==="MÉDIA"||comp==="MEDIA"?"background:#FFF8E1;color:#B7860B":"background:#E6F7ED;color:#1A7A4A");
+      chips+=`<span class="k-info-chip" style="${cStyle}">${comp}</span>`;
+    }
+
+    const secsInicial=segundosNaColuna(t.ultimoStatus);
+    const timerCls=getTimerClass(secsInicial);
+    const timerId=`timer-${t.id||index}`;
+
+    let selectStatus=`<select onchange="mudarStatus(${index},this.value)">`;
+    COLUNAS.forEach(c=>{selectStatus+=`<option value="${c}" ${String(t.status)===c?"selected":""}>Mover p/ ${c}</option>`;});
+    selectStatus+=`</select>`;
+
+    let selectResp=`<select onchange="mudarResp(${index},this.value)" style="flex:1;padding:3px;font-size:0.75rem;border:1px solid var(--gray2);border-radius:4px;">`;
+    TECNICOS.forEach(tc=>{selectResp+=`<option value="${tc}" ${t.resp===tc?"selected":""}>${tc}</option>`;});
+    selectResp+=`</select>`;
+
+    const temObs=t.observacao&&String(t.observacao).trim();
+    const obsTitle=temObs?`title="${String(t.observacao).substring(0,80)}"`:""
+
+    const card=document.createElement("div");
+    card.className="k-card";
+    card.innerHTML=`
+      <div class="k-card-header">
+        <span class="k-empresa ${corEmpresa}">${t.empresa}</span>
+        <span class="doc-tag">${t.doc}</span>
+      </div>
+      ${t.cnpj?`<p style="color:#999;font-size:0.72rem;">CNPJ: ${t.cnpj}</p>`:""}
+      <div class="k-info-row">${chips}</div>
+      <div class="k-timer ${timerCls}" id="${timerId}" data-ts="${t.ultimoStatus||""}">
+        <span>⏱ Nesta coluna:</span>
+        <span class="timer-val">${formatarCronometro(secsInicial)}</span>
+      </div>
+      <div class="k-resp-row">
+        <label>Resp:</label>${selectResp}
+      </div>
+      ${selectStatus}
+      <div class="k-actions">
+        ${t.status==="Aguardando"?`<button class="k-btn-icon" style="background:#E8F3FC;color:#2272C3;" title="Editar" onclick="abrirModalEdicao(${index})">✏️</button>`:""}
+        <button class="k-btn-icon k-btn-del" title="Excluir" onclick="excluirTarefaFront(${index})">🗑️</button>
+        ${t.status==="Concluído"?`<button class="k-btn-icon k-btn-arch" title="Arquivar" onclick="arquivarTarefaFront(${index})">📁</button>`:""}
+        <button class="k-btn-icon k-btn-obs ${temObs?"has-obs":""}" title="${temObs?"Ver/Editar observação":"Adicionar observação"}" onclick="abrirObsModal(${index})" ${obsTitle}>💬</button>
+        ${temObs?`<span style="font-size:0.68rem;color:#5B2D8E;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${String(t.observacao).substring(0,40)}${String(t.observacao).length>40?"…":""}</span>`:""}
+      </div>`;
+
+    const targetCol=document.getElementById("col-"+String(t.status||"Elaboração").replace(/\s/g,""));
+    if(targetCol) targetCol.appendChild(card);
+  });
+
+  iniciarCronometros();
+}
+
+function iniciarCronometros(){
+  if(timerInterval) clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    document.querySelectorAll(".k-timer[data-ts]").forEach(el=>{
+      const ts=el.getAttribute("data-ts");
+      if(!ts) return;
+      const d=new Date(ts);
+      if(isNaN(d)) return;
+      const secs=Math.floor((Date.now()-d.getTime())/1000);
+      const valEl=el.querySelector(".timer-val");
+      if(valEl) valEl.textContent=formatarCronometro(secs);
+      const nc=getTimerClass(secs);
+      el.className=`k-timer ${nc}`;
+    });
+  },1000);
+}
+
+async function mudarStatus(index,novoStatus){
+  const t=tarefas[index];
+  t.status=novoStatus;
+  t.ultimoStatus=new Date().toISOString();
+  renderKanban();
+  try{
+    await api({action:"updateStatus",data:JSON.stringify({id:t.id,status:novoStatus,ultimoStatus:t.ultimoStatus})});
+    showToast("Status atualizado ✓");
+  }catch(e){showToast("Erro ao salvar status","error");}
+}
+
+function abrirModalEdicao(index){
+  const t=tarefas[index];
+  showTab("tab-form", document.querySelectorAll(".tab")[1]);
+  document.getElementById("f-empresa").value=t.empresa||"";
+  document.getElementById("f-cnpj").value=t.cnpj||"";
+  document.getElementById("f-entrega").value=t.dataEntrega?t.dataEntrega.substring(0,10):"";
+  document.getElementById("f-vist-data").value=t.dataVistoria?t.dataVistoria.substring(0,10):"";
+  document.getElementById("f-ghe").value=t.numGHEs||"";
+  document.getElementById("f-resp").value=t.resp||"Ana";
+  document.getElementById("f-vistoriador").value=t.vistoriador||"";
+  calcEstimativas();
+  
+  document.querySelector(".docs-grid").closest(".form-group").style.display="none";
+  document.querySelector("#secundarios-container").closest(".form-group").style.display="none";
+  
+  document.getElementById("f-empresa").setAttribute("readonly","true");
+  document.getElementById("f-cnpj").setAttribute("readonly","true");
+  const btn=document.querySelector("#tab-form .btn");
+  btn.textContent="ATUALIZAR CADASTRO";
+  btn.onclick=()=>salvarEdicaoEmpresa(t.empresa,t.cnpj);
+}
+
+async function salvarEdicaoEmpresa(empresa, cnpj){
+  const dataEntrega=document.getElementById("f-entrega").value;
+  const dataVistoria=document.getElementById("f-vist-data").value;
+  const numGHEs=document.getElementById("f-ghe").value;
+  const resp=document.getElementById("f-resp").value;
+  const vistoriador=document.getElementById("f-vistoriador").value;
+  const complexidade=document.getElementById("f-complex").value;
+  showLoading("Atualizando cadastro...");
+  try{
+    await api({action:"updateEdicao",data:JSON.stringify({empresa,cnpj,dataEntrega,dataVistoria,numGHEs,resp,vistoriador,complexidade})});
+    tarefas.forEach(t=>{
+      if(t.empresa===empresa&&t.cnpj===cnpj){
+        t.dataEntrega=dataEntrega;
+        t.dataVistoria=dataVistoria;
+        t.numGHEs=numGHEs;
+        t.resp=resp;
+        t.vistoriador=vistoriador;
+        t.complexidade=complexidade;
+      }
+    });
+    const btn=document.querySelector("#tab-form .btn");
+    btn.textContent="GERAR TAREFAS NO KANBAN";
+    btn.onclick=salvarPlanejamento;
+    document.getElementById("f-empresa").removeAttribute("readonly");
+    document.getElementById("f-cnpj").removeAttribute("readonly");
+    showToast("Cadastro atualizado ✓");
+    showTab("tab-kanban",document.querySelectorAll(".tab")[0]);
+  }catch(e){showToast("Erro ao atualizar","error");}
+  hideLoading();
+}
+
+async function mudarResp(index,novoResp){
+  const t=tarefas[index];
+  t.resp=novoResp;
+  try{
+    await api({action:"updateResp",data:JSON.stringify({id:t.id,resp:novoResp})});
+    showToast("Responsável atualizado ✓");
+  }catch(e){showToast("Erro ao salvar responsável","error");}
+}
+
+async function excluirTarefaFront(index){
+  if(!confirm("Deseja excluir esta tarefa?")) return;
+  const t=tarefas[index];
+  try{
+    await api({action:"excluir",data:JSON.stringify({id:t.id})});
+    t.ativo="EXCLUIDO";renderKanban();atualizarDashboard();showToast("Excluído ✓");
+  }catch(e){showToast("Erro ao excluir","error");}
+}
+
+async function arquivarTarefaFront(index){
+  if(!confirm("Arquivar esta tarefa?")) return;
+  const t=tarefas[index];
+  try{
+    await api({action:"arquivar",data:JSON.stringify({id:t.id})});
+    t.ativo="ARQUIVADO";renderKanban();atualizarDashboard();showToast("Arquivado ✓");
+  }catch(e){showToast("Erro ao arquivar","error");}
+}
+
+// ── MODAL OBSERVAÇÃO ─────────────────────────────────────
+function abrirObsModal(index){
+  obsModalIndex=index;
+  const t=tarefas[index];
+  document.getElementById("obs-modal-empresa").textContent=`${t.empresa} — ${t.doc}`;
+  document.getElementById("obs-textarea").value=t.observacao||"";
+  document.getElementById("obs-modal-overlay").classList.add("show");
+}
+
+function fecharObsModal(){
+  document.getElementById("obs-modal-overlay").classList.remove("show");
+  obsModalIndex=null;
+}
+
+async function salvarObservacao(){
+  if(obsModalIndex===null) return;
+  const t=tarefas[obsModalIndex];
+  const obs=document.getElementById("obs-textarea").value.trim();
+  t.observacao=obs;
+  fecharObsModal();
+  renderKanban();
+  try{
+    await api({action:"updateObservacao",data:JSON.stringify({id:t.id,observacao:obs})});
+    showToast("Observação salva ✓");
+  }catch(e){showToast("Erro ao salvar observação","error");}
+}
+
+document.getElementById("obs-modal-overlay").addEventListener("click",function(e){
+  if(e.target===this) fecharObsModal();
+});
+
+// ── SERVIÇOS SECUNDÁRIOS ─────────────────────────────────
+function renderServicosSec(){
+  const container=document.getElementById("sec-grid-container");
+  container.innerHTML="";
+  const filterNome=(document.getElementById("sec-filter-nome").value||"").toLowerCase().trim();
+  const filterCnpj=(document.getElementById("sec-filter-cnpj").value||"").toLowerCase().trim();
+
+  const empresas={};
+  tarefas.forEach(t=>{
+    if(t.ativo==="ARQUIVADO"||t.ativo==="EXCLUIDO") return;
+    if(t.tipo?.toUpperCase()!=="SECUNDARIO") return;
+    const emp=t.empresa;
+    if(!empresas[emp]) empresas[emp]={empresa:emp,cnpj:t.cnpj||"",total:0,feitos:0,itens:[]};
+    empresas[emp].total++;
+    if(t.status==="Concluído") empresas[emp].feitos++;
+    empresas[emp].itens.push(t);
+  });
+
+  let lista=Object.values(empresas);
+
+  if(filterNome) lista=lista.filter(e=>e.empresa.toLowerCase().includes(filterNome));
+  if(filterCnpj) lista=lista.filter(e=>e.cnpj.toLowerCase().includes(filterCnpj));
+
+  if(!lista.length){
+    container.innerHTML=`<div class="sec-empty"><span>📭</span>Nenhum serviço secundário encontrado.</div>`;
+    return;
+  }
+
+  lista.forEach(e=>{
+    const pct=e.total?Math.round((e.feitos/e.total)*100):0;
+    let pendentes="";
+    let concluidos="";
+    let qtdConcluidos=0;
+
+    e.itens.forEach(i=>{
+      const done=i.status==="Concluído";
+      let respOpts=TECNICOS.map(tc=>`<option value="${tc}" ${i.resp===tc?"selected":""}>${tc}</option>`).join("");
+      const item=`
+        <div class="sec-item">
+          <input type="checkbox" ${done?"checked":""} onchange="toggleSec('${i.id}',this.checked)">
+          <span class="sec-item-label ${done?"done":""}">${i.doc}</span>
+          <select class="sec-item-resp" onchange="mudarRespSec('${i.id}',this.value)">${respOpts}</select>
+        </div>`;
+      if(done){
+        qtdConcluidos++;
+        const dataFeito=i.ultimoStatus?new Date(i.ultimoStatus).toLocaleDateString("pt-BR"):"—";
+        concluidos+=`
+          <div class="sec-item" style="opacity:0.7;">
+            <input type="checkbox" checked onchange="toggleSec('${i.id}',this.checked)">
+            <span class="sec-item-label done">${i.doc}</span>
+            <span style="font-size:0.7rem;color:#888;margin-left:auto;">${i.resp} • ${dataFeito}</span>
+          </div>`;
+      } else {
+        pendentes+=item;
+      }
+    });
+
+    const secId=`sec-concluidos-${e.empresa.replace(/\s/g,"")}`;
+
+    const card=document.createElement("div");
+    card.className="sec-card";
+    card.innerHTML=`
+      <div class="sec-card-header">
+        <h3>${e.empresa}</h3>
+        <div class="sec-badge">
+          <span class="sec-count">${e.feitos}/${e.total}</span>
+          <span class="sec-pct ${pct===100?"completo":""}">${pct}%</span>
+        </div>
+      </div>
+      <div class="sec-progress"><div class="sec-progress-bar" style="width:${pct}%"></div></div>
+      <div class="sec-body">
+        ${pendentes||`<p style="color:#aaa;font-size:0.85rem;padding:8px 0;">Nenhum pendente ✓</p>`}
+        ${qtdConcluidos>0?`
+          <div style="margin-top:8px;border-top:1px solid var(--gray2);padding-top:8px;">
+            <div onclick="document.getElementById('${secId}').style.display=document.getElementById('${secId}').style.display==='none'?'block':'none'"
+                 style="cursor:pointer;font-size:0.8rem;color:var(--green);font-weight:600;">
+              ▼ Ver concluídos (${qtdConcluidos})
+            </div>
+            <div id="${secId}" style="display:none;margin-top:6px;">
+              ${concluidos}
+            </div>
+          </div>`:""}
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+async function toggleSec(id,checked){
+  const t=tarefas.find(x=>String(x.id)===String(id));
+  if(t){t.status=checked?"Concluído":"Elaboração";renderServicosSec();}
+  try{
+    await api({action:"updateStatus",data:JSON.stringify({id,status:checked?"Concluído":"Elaboração",ultimoStatus:new Date().toISOString()})});
+    showToast(checked?"Concluído ✓":"Reaberto");
+    atualizarDashboard();
+  }catch(e){showToast("Erro","error");}
+}
+
+async function mudarRespSec(id,novoResp){
+  const t=tarefas.find(x=>String(x.id)===String(id));
+  if(t) t.resp=novoResp;
+  try{
+    await api({action:"updateResp",data:JSON.stringify({id,resp:novoResp})});
+    showToast("Responsável atualizado ✓");
+  }catch(e){showToast("Erro","error");}
+}
+
+// ── RELATÓRIOS ────────────────────────────────────────────
+function renderRelatorios(){
+  const container=document.getElementById("rel-container");
+  container.innerHTML="";
+  const ativos=tarefas.filter(t=>t.ativo!=="ARQUIVADO"&&t.ativo!=="EXCLUIDO"&&t.tipo?.toUpperCase()!=="SECUNDARIO");
+
+  const porTecnico={};
+  TECNICOS.forEach(tc=>porTecnico[tc]={total:0,concluidos:0,emAtraso:0});
+  ativos.forEach(t=>{
+    const tc=t.resp;
+    if(!porTecnico[tc]) porTecnico[tc]={total:0,concluidos:0,emAtraso:0};
+    porTecnico[tc].total++;
+    if(t.status==="Concluído") porTecnico[tc].concluidos++;
+    if(t.dataEntrega&&parseDateBR(t.dataEntrega)<Date.now()&&t.status!=="Concluído") porTecnico[tc].emAtraso++;
+  });
+
+  const alertas=ativos.filter(t=>{
+    const s=segundosNaColuna(t.ultimoStatus);
+    return s!==null&&s>7*86400&&t.status!=="Concluído";
+  }).sort((a,b)=>segundosNaColuna(b.ultimoStatus)-segundosNaColuna(a.ultimoStatus));
+
+  const proximasEntregas=ativos
+    .filter(t=>t.dataEntrega&&t.status!=="Concluído")
+    .sort((a,b)=>parseDateBR(a.dataEntrega)-parseDateBR(b.dataEntrega))
+    .slice(0,8);
+
+  const tempoEmpresa={};
+  ativos.forEach(t=>{
+    const key=`${t.empresa}|||${t.doc}`;
+    const secsColuna=segundosNaColuna(t.ultimoStatus)||0;
+    const secsTotal=t.dataCadastro?Math.floor((Date.now()-new Date(t.dataCadastro).getTime())/1000):0;
+    tempoEmpresa[key]={empresa:t.empresa,doc:t.doc,status:t.status,secsColuna,secsTotal};
+  });
+  const tempoLista=Object.values(tempoEmpresa).sort((a,b)=>b.secsColuna-a.secsColuna).slice(0,15);
+
+  let html="";
+
+  const porTecnicoSec={};
+  TECNICOS.forEach(tc=>porTecnicoSec[tc]={total:0,concluidos:0});
+  tarefas.forEach(t=>{
+    if(t.ativo==="ARQUIVADO"||t.ativo==="EXCLUIDO") return;
+    if(t.tipo?.toUpperCase()!=="SECUNDARIO") return;
+    const tc=t.resp;
+    if(!porTecnicoSec[tc]) porTecnicoSec[tc]={total:0,concluidos:0};
+    porTecnicoSec[tc].total++;
+    if(t.status==="Concluído") porTecnicoSec[tc].concluidos++;
+  });
+
+  html+=`<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:20px;">`;
+
+  html+=`<div class="rel-card"><h3>👤 Produção por Técnico</h3>`;
+  TECNICOS.forEach(tc=>{
+    const d=porTecnico[tc];
+    if(!d.total) return;
+    const pct=Math.round((d.concluidos/d.total)*100);
+    html+=`<div class="rel-row">
+      <span><b>${tc}</b> — ${d.total} docs</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        ${d.emAtraso?`<span class="rel-badge vermelho">⚠ ${d.emAtraso} atrasado(s)</span>`:""}
+        <span class="rel-badge ${pct===100?"verde":(pct>=50?"amarelo":"vermelho")}">${pct}% ok</span>
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  html+=`<div class="rel-card"><h3>📦 Serviços Secundários por Técnico</h3>`;
+  let temSec=false;
+  TECNICOS.forEach(tc=>{
+    const d=porTecnicoSec[tc];
+    if(!d.total) return;
+    temSec=true;
+    const pct=Math.round((d.concluidos/d.total)*100);
+    html+=`<div class="rel-row">
+      <span><b>${tc}</b> — ${d.total} serviços</span>
+      <span class="rel-badge ${pct===100?"verde":(pct>=50?"amarelo":"vermelho")}">${pct}% ok</span>
+    </div>`;
+  });
+  if(!temSec) html+=`<p style="color:#aaa;font-size:0.85rem;padding:8px 0;">Nenhum serviço secundário cadastrado</p>`;
+  html+=`</div>`;
+
+  html+=`</div>`; 
+
+  html+=`<div class="rel-card" style="grid-column:1/-1;"><h3>⏱ Tempo por Empresa / Documento</h3>
+    <table class="tempo-table">
+      <thead><tr><th>Empresa</th><th>Documento</th><th>Etapa Atual</th><th>Tempo nesta etapa</th><th>Tempo total (desde cadastro)</th></tr></thead>
+      <tbody>`;
+  if(!tempoLista.length){
+    html+=`<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px;">Sem dados suficientes</td></tr>`;
+  } else {
+    tempoLista.forEach(t=>{
+      const corColuna=t.secsColuna>7*86400?"color:#C0392B":(t.secsColuna>3*86400?"color:#B7860B":"color:#1A7A4A");
+      html+=`<tr>
+        <td><b>${t.empresa}</b></td>
+        <td>${t.doc}</td>
+        <td>${t.status||"—"}</td>
+        <td style="${corColuna}"><b>${formatarTempoRel(t.secsColuna)}</b></td>
+        <td>${formatarTempoRel(t.secsTotal)}</td>
+      </tr>`;
+    });
+  }
+  html+=`</tbody></table></div>`;
+
+  html+=`<div class="rel-card"><h3>🚨 Parados há mais de 7 dias</h3>`;
+  if(!alertas.length){html+=`<p style="color:#aaa;font-size:0.85rem;padding:8px 0;">Nenhum card parado há mais de 7 dias ✓</p>`;}
+  alertas.forEach(t=>{
+    const s=segundosNaColuna(t.ultimoStatus);
+    html+=`<div class="rel-row">
+      <span><b>${t.empresa}</b> — ${t.doc}</span>
+      <span class="rel-badge vermelho">${formatarTempoRel(s)}</span>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  if(proximasEntregas.length){
+    html+=`<div class="rel-card"><h3>📅 Próximas Entregas</h3>`;
+    proximasEntregas.forEach(t=>{
+      const diasE=Math.floor((new Date(t.dataEntrega)-Date.now())/(1000*60*60*24));
+      const corE=diasE>7?"verde":(diasE>=0?"amarelo":"vermelho");
+      html+=`<div class="rel-row">
+        <span><b>${t.empresa}</b> — ${t.doc}</span>
+        <span class="rel-badge ${corE}">${diasE<0?"ATRASADO":diasE===0?"HOJE":`${diasE}d`}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  container.innerHTML=html;
+}
+
+// ── FORMULÁRIO ───────────────────────────────────────────
+function calcEstimativas(){
+  const ghe=parseInt(document.getElementById("f-ghe").value)||0;
+  let comp="",tempo="";
+  if(ghe>=1&&ghe<=5){comp="BAIXA";tempo="1h 30m";}
+  else if(ghe<=10){comp="MÉDIA";tempo="3h 00m";}
+  else if(ghe>10){comp="ALTA";tempo="5h 00m";}
+  const c=document.getElementById("f-complex");
+  c.value=comp;c.style.color=comp==="ALTA"?"var(--red)":(comp==="MÉDIA"?"var(--gold)":"var(--green)");
+  document.getElementById("f-tempo-prev").value=tempo;
+}
+
+function toggleChip(btn, nome){
+  const jaExiste=servicosSecundariosTemp.findIndex(s=>s.nome===nome);
+  if(jaExiste>=0){
+    servicosSecundariosTemp.splice(jaExiste,1);
+    btn.classList.remove("ativo");
+  } else {
+    servicosSecundariosTemp.push({nome});
+    btn.classList.add("ativo");
+  }
+  renderSecundariosTemp();
+}
+
+function toggleOutras(){
+  const btn=document.querySelector(".chip-outras");
+  const input=document.getElementById("outras-input");
+  btn.classList.toggle("ativo");
+  input.style.display=btn.classList.contains("ativo")?"block":"none";
+}
+
+function addServicoSecundario(){
+  const input=document.getElementById("novo-servico-sec");
+  const valor=input.value.trim().toUpperCase();
+  if(!valor) return;
+  if(!servicosSecundariosTemp.find(s=>s.nome===valor)){
+    servicosSecundariosTemp.push({nome:valor});
+    renderSecundariosTemp();
+  }
+  input.value="";
+}
+
+function renderSecundariosTemp(){
+  const c=document.getElementById("secundarios-container");c.innerHTML="";
+  servicosSecundariosTemp.forEach((s,i)=>{
+    const div=document.createElement("div");
+    div.style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f4f7fa;margin-bottom:5px;border-radius:4px;border:1px solid #e2ebf3;";
+    div.innerHTML=`<span style="font-size:0.85rem;">📌 ${s.nome}</span><button onclick="servicosSecundariosTemp.splice(${i},1);renderSecundariosTemp();" style="color:var(--red);border:none;background:none;cursor:pointer;">✖</button>`;
+    c.appendChild(div);
+  });
+}
+
+async function salvarPlanejamento(){
+  const empresa=document.getElementById("f-empresa").value.trim();
+  const cnpj=document.getElementById("f-cnpj").value.trim();
+  const dataEntrega=document.getElementById("f-entrega").value;
+  const dataVistoria=document.getElementById("f-vist-data").value;
+  const numGHEs=document.getElementById("f-ghe").value;
+  if(!empresa) return alert("Preencha a Empresa!");
+  const checkboxes=document.querySelectorAll(".doc-chk:checked");
+  if(!checkboxes.length&&!servicosSecundariosTemp.length) return alert("Selecione ao menos um documento!");
+  showLoading("Salvando tarefas...");
+  const complex=document.getElementById("f-complex").value||"BAIXA";
+  const tempoP=document.getElementById("f-tempo-prev").value||"1h 00m";
+  const resp=document.getElementById("f-resp").value;
+  const vist=document.getElementById("f-vistoriador").value;
+  const agora=new Date().toISOString();
+  try{
+    for(const chk of checkboxes){
+      await api({action:"save",data:JSON.stringify({empresa,cnpj,doc:chk.value,resp,complexidade:complex,vistoriador:vist,tempoPrev:tempoP,tipo:"PRINCIPAL",dataCadastro:agora,ultimoStatus:agora,dataEntrega,dataVistoria,numGHEs})});
+    }
+    for(const s of servicosSecundariosTemp){
+      await api({action:"save",data:JSON.stringify({empresa,cnpj,doc:s.nome,resp,complexidade:complex,vistoriador:vist,tempoPrev:tempoP,tipo:"SECUNDARIO",dataCadastro:agora,ultimoStatus:agora,dataEntrega,dataVistoria,numGHEs})});
+    }
+    showToast(`${checkboxes.length+servicosSecundariosTemp.length} tarefa(s) criada(s) ✓`);
+    document.querySelectorAll("input[type=text],input[type=number],input[type=date]").forEach(i=>i.value="");
+    document.querySelectorAll("input[type=checkbox]").forEach(i=>i.checked=false);
+    document.getElementById("f-complex").value="";document.getElementById("f-tempo-prev").value="";
+    servicosSecundariosTemp=[];renderSecundariosTemp();
+    await carregarTarefas(true);
+    hideLoading();
+    showTab("tab-kanban",document.querySelector(".tab"));
+  }catch(e){showToast("Erro ao salvar","error");hideLoading();}
+}
+
+// ── NAVEGAÇÃO ────────────────────────────────────────────
+function showTab(tabId,el){
+  if(tabId==="tab-form"){
+    const btn=document.querySelector("#tab-form .btn");
+    if(btn&&btn.textContent==="ATUALIZAR CADASTRO"){
+      btn.textContent="GERAR TAREFAS NO KANBAN";
+      btn.onclick=salvarPlanejamento;
+      document.getElementById("f-empresa").removeAttribute("readonly");
+      document.getElementById("f-cnpj").removeAttribute("readonly");
+      document.querySelector(".docs-grid").closest(".form-group").style.display="";
+      document.querySelector("#secundarios-container").closest(".form-group").style.display="";
+    }
+  }
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById(tabId).classList.add("active");
+  if(el) el.classList.add("active");
+  if(tabId==="tab-kanban") renderKanban();
+  if(tabId==="tab-servicos-sec") renderServicosSec();
+  if(tabId==="tab-relatorios") renderRelatorios();
+}
+
+</script>
+</body>
+</html>
