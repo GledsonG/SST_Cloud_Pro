@@ -31,11 +31,11 @@ Para manter a aplicação leve e independente, optei por uma abordagem *Vanilla*
 
 ---
 
-## 🕹️ Como testar o projeto (Live Demo)
+## 🕹️ Como testar o projeto
 
 Como o sistema foi adaptado para rodar de forma autônoma sem um backend real, testá-lo é muito simples:
 
-1. Acesse o link do projeto (se hospedado no GitHub Pages) ou baixe o arquivo `index.html`.
+1. Acesse o link do projeto `index.html`.
 2. Abra o arquivo no seu navegador preferido.
 3. Na tela de login, digite **qualquer usuário e senha** (ex: `admin` / `admin`).
 4. Navegue pelas abas, mova os cards, edite status e crie novas tarefas para ver a simulação da API funcionando.
